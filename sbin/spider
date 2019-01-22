@@ -199,6 +199,14 @@ if ($argc == 1 || !in_array($argv[1], [
 ])) {
     exit($usage);
 }
+//check if installed
+if (!in_array($argv[1], ['install', 'reinstall'])) {
+    if (!$getFile('src/.installed')) {
+        $exit('Spider has not installed',
+            'Use [spider install] first'
+        );
+    }
+}
 
 switch ($argv[1]) {
     case 'install':
