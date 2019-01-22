@@ -1,0 +1,32 @@
+[image]
+#图片最小，默认100k
+minsize=10000
+
+#图片最大，默认10m
+maxsize=10000000
+
+#爬取时间，默认1小时
+expiretime=3600
+
+#爬取数量，默认4000张
+maxcount=4000
+
+#爬取图片类型，大小写不敏感
+type=["jpg","jpeg","png","gif","bmp"]
+
+#宽高比
+ratio=[0.59, 1.8]
+
+#图片下载超时时间，60s
+timeout=60
+
+[download]
+
+#以域名为文件目录，默认true
+domainfolder=true
+        
+#以title分组，默认true
+titlefolder=false
+
+#文件名称, 随机字符串rand或者title命名
+filename="title"

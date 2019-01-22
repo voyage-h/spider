@@ -1,0 +1,27 @@
+{
+  "name" : "statistic",
+  "description" : "a new php framework",
+  "require" : {
+    "php": ">=7.1",
+    "predis/predis": "^v1.0",
+    "resque/php-resque": "1.2.x",
+    "nmred/kafka-php": "0.2.*",
+    "yosymfony/toml": "^1.0"
+  },
+  "license" : "MIT",
+  "autoload" : {
+    "psr-4" : {
+      "system\\" : "system/",
+      "exception\\" : "system/error",
+      "controllers\\" : "app/controllers/",
+      "models\\" : "app/models/",
+      "plugins\\" : "app/plugins/",
+      "helper\\" : "system/helper/",
+      "library\\" : "app/library/",
+      "system\\db\\" : "system/db/"
+    }
+  },
+  "authors" : [ {
+    "name" : "Zhanghang"
+  } ]
+}

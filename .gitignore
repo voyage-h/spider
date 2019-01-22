@@ -1,0 +1,9 @@
+logs
+images
+.DS_Store
+src/kafka/vendor
+src/crawler/vendor
+src/crawler/app/runtime
+src/kafka/.topic
+src/kafka/.history
+src/.installed

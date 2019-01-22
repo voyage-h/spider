@@ -1,0 +1,12 @@
+{
+    "name": "kafka/php",
+    "type": "project",
+    "description": "php client of kafka cluster",
+    "keywords": [
+        "kafka",
+        "php"
+    ],
+    "require": {
+        "nmred/kafka-php": "0.2.*"
+    }
+}

@@ -1,0 +1,42 @@
+version: '3'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports: 
+      - 2181
+
+  kafka:
+    image: wurstmeister/kafka
+    ports: 
+      - 9092
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.16.36.119
+      #KAFKA_HEAP_OPTS: -Xmx256M -Xms128M
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  redis:
+    image: redis
+
+  consumer:
+    image: php
+    command: php Consumer.php
+    working_dir: /workspace/kafka
+    links:
+      - kafka
+      - crawler
+    volumes:
+      - ../src/kafka:/workspace/kafka
+
+  crawler:
+    image: richarvey/nginx-php-fpm
+    env_file: .env
+    links:
+      - redis
+    volumes:
+      - ./nginx:/etc/nginx/sites-enabled
+      - ../src/crawler:/workspace/www
+      - ../logs:/workspace/logs
+      - ../images:/workspace/images
+      - ./default.toml:/workspace/etc/default.toml

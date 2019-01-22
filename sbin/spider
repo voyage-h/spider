@@ -1,0 +1,344 @@
+#!/usr/bin/env php
+<?php
+
+date_default_timezone_set('PRC');
+
+$path = dirname(__DIR__);
+
+$usage = <<<EOT
+Usage:
+  spider [Commands] [Options]
+
+Commands:
+  install    install spider
+  reinstall  reinstall spider
+  start      start spider
+  run        crawl urls
+  restart    restart spider
+  stop       stop spider
+  remove     stop and delete spider
+  log        show spider logs
+  status     show spider status
+  clear      clear url cache 
+  truncate   clear url and image cache
+
+EOT;
+
+$usage_run = <<<EOT
+Usage:
+  spider run [Options | Urls]
+
+Options:
+  [-h | --help]            show spider run help
+  [--history]              show spider run histories
+
+Urls:
+  spider run url           Crawl url
+  spider run url1 url2     Crawl url1 and url2
+
+EOT;
+
+$usage_log = <<<EOT
+Usage:
+  spider log [Options]
+
+Options:
+  [-h | --help] show usage of log command
+  [-l | --ls]   list available logs
+
+  spider        default, tail spider log by date
+  producer      tail producer log by date
+  docker        tail docker compose logs
+  access        tail nginx access log
+  debug         tail debug log
+EOT;
+
+$usage_clear = <<<EOT
+Usage:
+  spider clear [Urls]
+
+Example:
+  spider clear all  clear all spiders cache
+  spider clear url  clear spider url cache
+EOT;
+
+/**
+ * docker-compose 执行命令
+ * @param string $command
+ *
+ */
+$docker = function($command) use($path) {
+    system("docker-compose -f $path/etc/docker-compose.yml -p spider $command");
+};
+/**
+ * 安装spider
+ *
+ *
+ */
+$spiderInstall = function() use($path) {
+    $crawler = "$path/src/crawler";
+    $kafka = "$path/src/kafka";
+
+    //step1, install composer packages
+    system("docker run --rm -v $kafka:/app -it composer install");
+    system("docker run --rm -v $crawler:/app -it composer install");
+
+    //step2, check packages
+    exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
+    exec("docker run --rm -v $crawler:/app -it composer show -i", $res2);
+    if (count($res1) < 3 || count($res2) < 7) {
+        return false;
+    }
+    system("docker run --rm -v $crawler:/app -it composer dump-autoload -o");
+    return true;
+};
+/**
+ * 爬取url，若两次域名不同，这重启
+ * consumer容器
+ *
+ * @param array $urls
+ *
+ *
+ */
+$spiderRun = function($urls) use($path, $docker) {
+    //check topic
+    $topic_old = file_get_contents("$path/src/kafka/.topic");
+
+    $topic = '';
+    foreach($urls as $url) {
+        $topic .= parse_url($url)['host']."\n";
+    }
+    if (empty($topic)) {
+        exit("Invalid url\n");
+    }
+    if ($topic_old != $topic) {
+        file_put_contents("$path/src/kafka/.topic", $topic);
+        $docker('restart consumer');
+    }
+    $data = 'url='.json_encode($urls);
+    echo "Preparing to crawl...";
+    system("docker exec -it spider_crawler_1 curl -d '$data' localhost/crawler/start");
+};
+
+/**
+ * 清空爬虫缓存
+ *
+ * @param string $domain
+ * @param string action <clear | truncate>
+ * clear: 删除url缓存，图片不会重爬
+ * truncate: 删除所有缓存，图片会重爬
+ *
+ */
+$spiderCache = function($domain, $action) {
+    system("docker exec -it spider_crawler_1 curl -d 'domain=$domain' localhost/crawler/$action");
+};
+
+/**
+ * 查看爬虫是否启动
+ * 
+ * @return bool
+ *
+ */
+$checkSpider = function() {
+    exec("docker ps | grep spider_", $res);
+    return count($res) == 5 ? true : false;
+};
+
+/**
+ * 读文件
+ * @param string $filename
+ *
+ *
+ */
+$getFile = function($filename) use($path) {
+    substr($$filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
+    if (file_exists($filename)) {
+        return file_get_contents($filename);
+    }
+    return false;
+};
+
+/**
+ * 写文件
+ * @param string $filename
+ *
+ */
+$setFile = function($filename, $data, $append = false) use($path) {
+    substr($$filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
+    return $append ? file_put_contents($filename, $data, FILE_APPEND) : 
+        file_put_contents($filename, $data);
+};
+
+/**
+ * 终止程序执行并输出消息
+ *
+ */
+$exit = function() {
+    foreach(func_get_args() as $msg) {
+        echo <<<EOT
+
+$msg
+
+EOT;
+    }
+    exit;    
+};
+
+if ($argc == 1 || !in_array($argv[1], [
+    'install',
+    'reinstall',
+    'start', 
+    'run',
+    'restart', 
+    'stop', 
+    'remove',
+    'log',
+    'status',
+    'clear',
+    'truncate',
+])) {
+    exit($usage);
+}
+
+switch ($argv[1]) {
+    case 'install':
+    case 'reinstall':
+
+        //check if installed
+        $installed = "src/.installed";
+
+        if ($argv[1] == 'install' && $getFile($installed)) {
+            $exit("You had spider installed...",
+            "If you need to reinstall use [spider reinstall]"
+            );
+        }
+        if ($spiderInstall()) {
+            $setFile($installed, date('Y-m-d H:i:s', time()), true);
+            echo "Spider installed success...";
+        }
+    break;
+
+    case 'start':
+        $checkSpider() ? 
+            $exit('Spider is running...', 'fd') : 
+            $docker('up -d');
+        break;
+    case 'restart':
+        $docker('restart');
+        break;
+    case 'run':
+        switch ($argv[2]) {
+            case '':
+            case '-h':
+            case '--help':
+                exit($usage_run);
+            case '--history':
+                $his_file = "$path/src/kafka/.history";
+
+                //delete hisotry
+                if (isset($argv[3]) && 
+                    $argv[3] == 'clear') {
+                    file_put_contents($his_file, '');
+                    exit("All spider run histories are cleared \n");
+                }
+                //get history
+                if (file_exists($his_file)) {
+                    foreach(file($his_file) as $h) {
+                        if (empty($h) || substr($h, 0, 1) == '.')
+                            continue;
+                        echo $h;
+                    }
+                }
+                break;
+            default:
+                //check status
+                if (!$checkSpider()) {
+                    $exit('Spider is now not running',
+                    'Use [spider start] first');
+                }
+                if (substr($argv[2], 0, 4) != 'http') {
+                    $exit('Url must start with http|https');
+                }
+                $url = array_slice($argv, 2);
+                //记录历史
+                $date = date('Y-m-d H:i:s', time());
+                file_put_contents("$path/src/kafka/.history", "[$date] ".implode($url, "\n[$date] ")."\n", FILE_APPEND);
+
+                $spiderRun($url);
+        
+        }
+        break;
+    case 'stop':
+        $docker('stop');
+        break;
+    case 'rm':
+        $docker('rm -f');
+        break;
+    case 'remove':
+        fwrite(STDOUT, "确定删除爬虫(y/n): ");
+        if (strtolower(trim(fgets(STDIN))) == 'y') {
+            $docker('down');
+        }
+        break;
+    case 'status':
+        $docker('ps');
+        break;
+    case 'log':
+        $log = $argv[2];
+        switch($log) {
+            case '-l':
+            case '--ls':
+                $logs = scandir("$path/logs");
+                echo "Available logs:\n";
+                foreach($logs as $l) {
+                    if (empty($l) || substr($l, 0, 1) == '.') 
+                        continue;
+                    echo "  ".current(explode('-', $l))."\n";
+                }
+                echo "  docker";
+
+                exit($usage_log_ls);
+                break;
+            case '-h':
+            case '--help':
+                exit($usage_log);
+                break;
+            case 'docker':
+                $docker('logs -f');
+                break;
+            case 'access':
+            case 'producer':
+            case 'spider':
+            case 'debug':
+            //case '':
+                $d = date('Y-m-d', time());
+                !empty($log) or $log = 'spider';
+                system("tail -f $path/logs/$log-$d.log");
+                break;
+            case '':
+                exit($usage_log);
+                break;
+            default:
+                echo "$log log not found \n\n";
+                exit($usage_log);
+        }
+
+        break;
+    case 'clear':
+    case 'truncate':
+        if (!$checkSpider())
+            $eixt('Spider is not running...');
+
+        if (empty($argv[2])) 
+            exit($usage_clear);
+
+        $url = substr($argv[2],0 ,4) == 'http' ? 
+            $argv[2] : 'http://'.$argv[2];
+
+        $domain = parse_url($url['host']);
+        if (empty($domain))
+            $exit('Invalid url: '.$argv[2]);
+
+        $spiderCache($domain, $argv[1]);
+        break;
+}
