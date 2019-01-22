@@ -1,5 +1,9 @@
 # Image Spider
 an image spider created by docker
+## Requirements
+1. docker and docker-compose, click https://docs.docker.com/compose/install/ to install
+2. php 7.* or later
+
 ## Usage
 ### Step 1
 ```
