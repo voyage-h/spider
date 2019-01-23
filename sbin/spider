@@ -2,71 +2,7 @@
 <?php
 
 date_default_timezone_set('PRC');
-
 $path = dirname(__DIR__);
-
-$usage = <<<EOT
-Usage:
-  spider [Commands] [Options]
-
-Commands:
-  install    install spider
-  reinstall  reinstall spider
-  start      start spider
-  run        crawl urls
-  restart    restart spider
-  stop       stop spider
-  remove     stop and delete spider
-  log        show spider logs
-  status     show spider status
-  clear      clear url cache 
-  truncate   clear url and image cache
-
-
-EOT;
-
-$usage_run = <<<EOT
-Usage:
-  spider run [Options | Urls]
-
-Options:
-  [-h | --help]            show spider run help
-  [--history]              show spider run histories
-
-Urls:
-  spider run url           Crawl url
-  spider run url1 url2     Crawl url1 and url2
-
-
-EOT;
-
-$usage_log = <<<EOT
-Usage:
-  spider log [Options]
-
-Options:
-  [-h | --help] show usage of log command
-  [-l | --ls]   list available logs
-
-  spider        default, tail spider log by date
-  producer      tail producer log by date
-  docker        tail docker compose logs
-  access        tail nginx access log
-  debug         tail debug log
-
-
-EOT;
-
-$usage_clear = <<<EOT
-Usage:
-  spider clear [Urls]
-
-Example:
-  spider clear all  clear all spiders cache
-  spider clear url  clear spider url cache
-
-
-EOT;
 
 /**
  * docker-compose 执行命令
@@ -89,7 +25,7 @@ $docker = function($command, $echo = true) use($path) {
  *
  */
 $getFile = function($filename) use($path) {
-    substr($$filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
+    substr($filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
     return file_exists($filename) ? 
         file_get_contents($filename) : false;
 };
@@ -100,7 +36,7 @@ $getFile = function($filename) use($path) {
  *
  */
 $setFile = function($filename, $data, $append = false) use($path) {
-    substr($$filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
+    substr($filename, 0, 1) == '/' or $filename = $path.'/'.$filename;
     return $append ? file_put_contents($filename, $data, FILE_APPEND) : 
         file_put_contents($filename, $data);
 };
@@ -150,10 +86,9 @@ $spiderRun = function($urls) use($getFile, $setFile, $docker) {
     //$res = $docker("top consumer", false);
     //exec("docker top spider_consumer_1 ps aux | grep 'php Consumer.php'", $res);
 
-    print_r($res);exit;
     //if ($topic_old != $topic) {
-        //$setFile("src/kafka/.topic", $topic, true);
-        //$docker("exec consumer php Consumer.php");
+        $setFile("src/kafka/.topic", $topic, true);
+        $docker("exec consumer php Consumer.php");
         //$docker('restart consumer');
     //}
     $data = 'url='.json_encode($urls);
@@ -213,21 +148,6 @@ EOT;
 $command = isset($argv[1]) ? $argv[1] : '';
 $option = isset($argv[2]) ? $argv[2] : '';
 
-if ($argc == 1 || !in_array($command, [
-    'install',
-    'reinstall',
-    'start', 
-    'run',
-    'restart', 
-    'stop', 
-    'remove',
-    'log',
-    'status',
-    'clear',
-    'truncate',
-])) {
-    exit($usage);
-}
 //check if installed
 if (!in_array($command, ['install', 'reinstall'])) {
     if (!$getFile('src/.installed')) {
@@ -272,7 +192,21 @@ switch ($command) {
             case '':
             case '-h':
             case '--help':
-                exit($usage_run);
+                $help = <<<EOT
+Usage:
+  spider run [Options | Urls]
+
+Options:
+  [-h | --help]            show spider run help
+  [--history]              show spider run histories
+
+Urls:
+  spider run url           Crawl url
+  spider run url1 url2     Crawl url1 and url2
+
+
+EOT;
+                exit($help);
             case '--history':
                 //delete hisotry
                 if (isset($argv[3]) && 
@@ -325,12 +259,27 @@ switch ($command) {
                     echo "  ".current(explode('-', $l))."\n";
                 }
                 echo "  docker";
-
-                exit($usage_log_ls);
                 break;
+            case '':
             case '-h':
             case '--help':
-                exit($usage_log);
+                $help = <<<EOT
+Usage:
+  spider log [Options]
+
+Options:
+  [-h | --help] show usage of log command
+  [-l | --ls]   list available logs
+
+  spider        default, tail spider log by date
+  producer      tail producer log by date
+  docker        tail docker compose logs
+  access        tail nginx access log
+  debug         tail debug log
+
+
+EOT;
+                exit($help);
                 break;
             case 'docker':
                 $docker('logs -f');
@@ -339,17 +288,16 @@ switch ($command) {
             case 'producer':
             case 'spider':
             case 'debug':
-            //case '':
                 $d = date('Y-m-d', time());
                 !empty($option) or $option = 'spider';
                 system("tail -f $path/logs/$option-$d.log");
                 break;
-            case '':
-                exit($usage_log);
+            case 'nginx':
+            case 'consumer':
+                $docker("logs $option");
                 break;
             default:
-                echo "$option log not found \n\n";
-                exit($usage_log);
+                $exit("$option log not found");
         }
 
         break;
@@ -358,8 +306,19 @@ switch ($command) {
         if (!$checkSpider())
             $eixt('Spider is not running...');
 
-        if (empty($option)) 
-            exit($usage_clear);
+        if (empty($option)) {
+            $help = <<<EOT
+Usage:
+  spider clear [Urls]
+
+Example:
+  spider clear all  clear all spiders cache
+  spider clear url  clear spider url cache
+
+
+EOT;
+            exit($help);
+        }
 
         $url = substr($option, 0 ,4) == 'http' ? 
             $option : 'http://'.$option;
@@ -370,4 +329,42 @@ switch ($command) {
 
         $spiderCache($domain, $command);
         break;
+    case 'top':
+        if (empty($option)) {
+            $help = <<<EOT
+Usage:
+  spider top [Service]
+
+Service:
+  consumer  
+  crawler
+  kafka
+
+
+EOT;
+            exit($help);
+        }
+        $docker("top $option");
+        break;
+    default:
+        $usage = <<<EOT
+Usage:
+  spider [Commands] [Options]
+
+Commands:
+  install    install spider
+  reinstall  reinstall spider
+  start      start spider
+  run        crawl urls
+  restart    restart spider
+  stop       stop spider
+  remove     stop and delete spider
+  log        show spider logs
+  status     show spider status
+  clear      clear url cache 
+  truncate   clear url and image cache
+
+
+EOT;
+        exit($usage);
 }
