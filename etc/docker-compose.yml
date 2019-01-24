@@ -21,7 +21,7 @@ services:
 
   consumer:
     image: php
-    command: php Consumer.php
+    tty: true #容器启动后不退出
     working_dir: /workspace/kafka
     links:
       - kafka
