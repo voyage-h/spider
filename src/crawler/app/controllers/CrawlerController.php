@@ -26,27 +26,17 @@ class CrawlerController extends Controller
      */
     public function postStart() 
     {
-        //prepare
-        $post = $this->request->post;
+        $url = $this->request->post['url'];
+	    $domain  = parse_url($url)['host'];
 
-        $urls = $post['url'];
+    	$timeout = $this->conf['image']['expiretime'];
+        $maxcount = $this->conf['image']['maxcount'];
 
-        is_array($urls) or $urls = json_decode($urls, true);
+        //set crawler expire time
+        Rds::set(SPIDER_MAX_COUNT.$domain, $maxcount, $timeout);    
 
-        foreach($urls as $url) {
-            $url = trim($url);
-            substr($url,0,4) == 'http' or $url = 'http://'.$url;
-    	    $domain  = parse_url($url)['host'];
-    
-        	$timeout = $this->conf['image']['expiretime'];
-            $maxcount = $this->conf['image']['maxcount'];
-    
-            //set crawler expire time
-            Rds::set(SPIDER_MAX_COUNT.$domain, $maxcount, $timeout);    
-
-            Elog::info('spider',"Start spider : $url");
-        }
-        return Producer::start($urls);
+        Elog::info('spider',"Start spider : $url");
+        Producer::start($url);
     }
     /**
      * 爬虫处理

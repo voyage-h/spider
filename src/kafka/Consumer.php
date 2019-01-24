@@ -15,24 +15,24 @@ $config->setGroupId('spider');
 $config->setBrokerVersion('1.0.0');
 
 //
-$topics = file('.topic');
-foreach($topics as $key => $topic) {
-    $topics[$key] = trim($topic);
-}
+//$topics = file('.topic');
+//foreach($topics as $key => $topic) {
+//    $topics[$key] = trim($topic);
+//}
 
-$config->setTopics($topics);
+$config->setTopics(array_slice($argv, 1));
 $config->setOffsetReset('earliest');
 
 $consumer = new Consumer();
 
 $consumer->start(function ($topic, $part, $message): void {
-
     $url = $message['message']['value'];
 
     $curl = curl_init();
+
     curl_setopt($curl, CURLOPT_URL, 'crawler/crawler');
-    curl_setopt($curl, CURLOPT_HEADER, 0);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 0);
+    curl_setopt($curl, CURLOPT_HEADER, 1);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_POST, 1);
     curl_setopt($curl, CURLOPT_POSTFIELDS, ['url'=>$url]);
     $data = curl_exec($curl);

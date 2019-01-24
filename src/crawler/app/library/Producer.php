@@ -19,9 +19,8 @@ class Producer extends Dispatcher
      */
     public function __construct()
     {
-        //Elog::info('producer', 'preparing...');
-        //$this->logger = new Logger('my_logger');
-        //$this->logger->pushHandler(new StdoutHandler());
+        $this->logger = new Logger('my_logger');
+        $this->logger->pushHandler(new StdoutHandler());
         $this->setConfig();
     }
     /**
@@ -45,13 +44,12 @@ class Producer extends Dispatcher
      */
     protected function sync($data)
     {
-       $producer = new \Kafka\Producer();
-       //$producer->setLogger($this->logger);
-
-       foreach($data as $d) {
-           $producer->send([$d]);
-       }
-       return 'success';
+        $producer = new \Kafka\Producer();
+        //$producer->setLogger($this->logger);
+        
+        foreach($data as $d) {
+            $producer->send([$d]);
+        }
     }
 
     /**
@@ -61,23 +59,26 @@ class Producer extends Dispatcher
      */
     protected function async($data)
     {
-       $producer = new \Kafka\Producer(function() use ($data) {
-           return $data;
-       });
-
-       //$producer->setLogger($this->logger);
-
-       $d = is_array($data) ? json_encode($data) : $data;
-
-       $res = $producer->error(function($errorCode) use ($d) {
-           Elog::error('producer', "produce message failed: $d");
-           return false;
-       });
-       //$producer->success(function($result) use ($d) {
-       //    Elog::info('producer', "produce message success: $d");
-       //});
-       $producer->send(true);
-       return $res === false ? 'failed' : 'success';
+        $producer = new \Kafka\Producer(function() use ($data) {
+            return $data;
+        });
+        
+        $producer->setLogger($this->logger);
+        
+        $d = is_array($data) ? json_encode($data) : $data;
+        
+        $producer->error(function($errorCode) use ($d) {
+            Elog::error('producer', "produce message failed($errorCode): $d");
+            if ($errorCode == 1000) {
+                echo "failed: the topic is not exist";
+            } else {
+                echo "failed with error code $errorCode";
+            }
+        });
+        $producer->success(function($result) {
+            echo 'success';
+        });
+        $producer->send(true);
     }
 
     /**
@@ -87,6 +88,7 @@ class Producer extends Dispatcher
      */
     protected function start($urls, $sync = false) 
     {
+
         is_array($urls) or $urls = [$urls];
 
         $data = [];
