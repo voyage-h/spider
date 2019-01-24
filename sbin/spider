@@ -51,8 +51,8 @@ $spiderInstall = function() use($path) {
     $kafka = "$path/src/kafka";
 
     //step1, install composer packages
-    system("docker run --rm -v $kafka:/app -it composer install");
-    system("docker run --rm -v $crawler:/app -it composer install");
+    system("docker run --rm -v $kafka:/app -it composer update");
+    system("docker run --rm -v $crawler:/app -it composer update");
 
     //step2, check packages
     exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
@@ -71,29 +71,19 @@ $spiderInstall = function() use($path) {
  *
  *
  */
-$spiderRun = function($urls) use($getFile, $setFile, $docker) {
-    //check topic
-    $topic_old = $getFile("src/kafka/.topic");
-
-    $topic = '';
-    foreach($urls as $url) {
-        $topic .= parse_url($url)['host']."\n";
-    }
+$spiderRun = function($url) use($getFile, $setFile, $docker) {
+    $topic = parse_url($url)['host'];
     if (empty($topic)) {
         exit("Invalid url\n");
     }
-
-    //$res = $docker("top consumer", false);
-    //exec("docker top spider_consumer_1 ps aux | grep 'php Consumer.php'", $res);
-
-    //if ($topic_old != $topic) {
-        $setFile("src/kafka/.topic", $topic, true);
-        $docker("exec consumer php Consumer.php");
-        //$docker('restart consumer');
-    //}
-    $data = 'url='.json_encode($urls);
-    echo "Preparing to crawl...";
-    system("docker exec -it spider_crawler_1 curl -d '$data' localhost/crawler/start");
+    
+    $res = $docker("top consumer | grep $topic", false);
+    if (!empty($res)) {
+        exit("Spider is already running topic: $topic");
+    }
+    echo "Sending to producer...";
+    $docker("exec -d consumer php consumer.php $topic", false);
+    $docker("exec crawler curl -d 'url=$url' crawler/crawler/start");
 };
 
 /**
@@ -106,7 +96,7 @@ $spiderRun = function($urls) use($getFile, $setFile, $docker) {
  *
  */
 $spiderCache = function($domain, $action) {
-    system("docker exec -it spider_crawler_1 curl -d 'domain=$domain' localhost/crawler/$action");
+    $docker("exec crawler curl -d 'domain=$domain' crawler/crawler/$action");
 };
 
 /**
@@ -182,7 +172,15 @@ switch ($command) {
         break;
 
     case 'restart':
-        $docker('restart');
+        $docker("restart $option");
+        break;
+
+    case 'recreate':
+        fwrite(STDOUT, 
+            "重新创建所有容器，数据将会删除，确定(y/n): ");
+        if (strtolower(trim(fgets(STDIN))) == 'y') {
+            $docker("up -d --force-recreate");
+        }
         break;
 
     case 'run':
@@ -198,6 +196,7 @@ Usage:
 
 Options:
   [-h | --help]            show spider run help
+  [-l | --list]            show topics which are running
   [--history]              show spider run histories
 
 Urls:
@@ -216,21 +215,85 @@ EOT;
                 }
                 echo $getFile($his_file);
                 break;
+            case '--list':
+            case '-l':
+                $topics = $docker('top consumer | grep consumer.php', false);
+                if (!empty($topics)) {
+                    echo "Spider is running topics: ";
+                    foreach($topics as $topic) {
+                        $topic = end(explode(' ', $topic));
+                        echo "\n    - $topic";
+                    }
+                } else {
+                    echo 'There is no topic running';
+                }
+                break;
             default:
                 //check status
                 if (!$checkSpider()) {
                     $exit('Spider is now not running',
                     'Use [spider start] first');
                 }
-                if (substr($option, 0, 4) != 'http') {
-                    $exit('Url must start with http|https');
-                }
-                $url = array_slice($argv, 2);
-                //记录历史
-                $date = date('Y-m-d H:i:s', time());
-                $setFile($his_file, "[$date] ".implode($url, "\n[$date] ")."\n", true);
+                $urls = array_slice($argv, 2);
 
-                $spiderRun($url);
+                $date = date('Y-m-d H:i:s', time());
+                foreach($urls as $url) {
+                    if (substr($option, 0, 4) != 'http')
+                        continue;
+
+                    //记录历史
+                    $setFile($his_file, "[$date] ".$url, true);
+                    $spiderRun($url);
+                }
+        }
+        break;
+    case 'list':
+        $topics = $docker('top consumer | grep consumer.php', false);
+        if (!empty($topics)) {
+            echo "Spider is running topics: ";
+            foreach($topics as $topic) {
+                $topic = end(explode(' ', $topic));
+                echo "\n    - $topic";
+            }
+        } else {
+            echo 'There is no topic running';
+        }
+        break;
+    case 'kill':
+        switch($option) {
+            case '':
+            case '-h':
+            case '--help':
+                $help = <<<EOT
+Usage:
+  spider kill [Topics]
+
+Use [spider list] to show available topics
+
+
+EOT;
+                exit($help);
+            default:
+                $topics = $docker('top consumer | grep consumer.php', false);
+                if (!empty($topics)) {
+                    foreach($topics as $topic) {
+                        $topic = end(explode(' ', $topic));
+                        foreach(array_slice($argv, 2) as $t) {
+                            if ($t == $topic) {
+                                if (empty($docker("exec consumer which pkill", false))) {
+                                    echo "First run spider kill may take some time to install some tools...\n\n";
+                                    $docker("exec consumer apt-get update && apt-get install procps && pkill -f $topic");
+                                } else {
+                                    $docker("exec consumer pkill -f $topic");
+                                }
+                            }
+                        }
+
+                    }
+                    exit;
+                }
+                echo "This is no such topic running: $option";
+                break;
         }
         break;
     case 'stop':
@@ -292,9 +355,9 @@ EOT;
                 !empty($option) or $option = 'spider';
                 system("tail -f $path/logs/$option-$d.log");
                 break;
-            case 'nginx':
+            case 'crawler':
             case 'consumer':
-                $docker("logs $option");
+                $docker("logs -f $option");
                 break;
             default:
                 $exit("$option log not found");
@@ -330,10 +393,11 @@ EOT;
         $spiderCache($domain, $command);
         break;
     case 'top':
+    case 'attach':
         if (empty($option)) {
             $help = <<<EOT
 Usage:
-  spider top [Service]
+  spider $command [Service]
 
 Service:
   consumer  
@@ -344,7 +408,11 @@ Service:
 EOT;
             exit($help);
         }
-        $docker("top $option");
+        if ($command == 'attach') {
+            $docker("exec $option /bin/bash");
+        } else {
+            $docker("$command $option");
+        }
         break;
     default:
         $usage = <<<EOT
@@ -356,11 +424,13 @@ Commands:
   reinstall  reinstall spider
   start      start spider
   run        crawl urls
+  list       show running topics
   restart    restart spider
   stop       stop spider
   remove     stop and delete spider
   log        show spider logs
   status     show spider status
+  top        display the running processes
   clear      clear url cache 
   truncate   clear url and image cache
 
