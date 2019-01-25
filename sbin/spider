@@ -64,20 +64,27 @@ $setFile = function($filename, $data, $append = false) use($path) {
  *
  */
 $spiderInstall = function($command) use($path) {
-    $crawler = "$path/src/crawler";
-    $kafka = "$path/src/kafka";
+    //step1 pull docker images
+    system("docker run --rm -it wurstmeister/zookeeper echo 'pull zookeeper success...'");
+    system("docker run --rm -it wurstmeister/kafka echo 'pull kafka success...'");
+    system("docker run --rm -it redis echo 'pull redis success...'");
+    system("docker run --rm -it php echo 'pull php success...'");
+    system("docker run --rm -it richarvey/nginx-php-fpm echo 'pull nginx success...'");
 
-    //step1, install composer packages
-    system("docker run --rm -v $kafka:/app -it composer $command");
-    system("docker run --rm -v $crawler:/app -it composer $command");
-
-    //step2, check packages
-    exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
-    exec("docker run --rm -v $crawler:/app -it composer show -i", $res2);
-    if (count($res1) < 3 || count($res2) < 7) {
-        return false;
-    }
-    system("docker run --rm -v $crawler:/app -it composer dump-autoload -o");
+    //step2, install composer packages
+//    $crawler = "$path/src/crawler";
+//    $kafka = "$path/src/kafka";
+//
+//    system("docker run --rm -v $kafka:/app -it composer $command");
+//    system("docker run --rm -v $crawler:/app -it composer $command");
+//
+//    //step2, check packages
+//    exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
+//    exec("docker run --rm -v $crawler:/app -it composer show -i", $res2);
+//    if (count($res1) < 3 || count($res2) < 7) {
+//        return false;
+//    }
+//    system("docker run --rm -v $crawler:/app -it composer dump-autoload -o");
     return true;
 };
 /**
