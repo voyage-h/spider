@@ -65,11 +65,11 @@ $setFile = function($filename, $data, $append = false) use($path) {
  */
 $spiderInstall = function($command) use($path) {
     //step1 pull docker images
-    system("docker run --rm -it wurstmeister/zookeeper echo 'pull zookeeper success...'");
-    system("docker run --rm -it wurstmeister/kafka echo 'pull kafka success...'");
-    system("docker run --rm -it redis echo 'pull redis success...'");
-    system("docker run --rm -it composer echo 'pull composer success...'");
-    system("docker run --rm -it richarvey/nginx-php-fpm echo 'pull nginx success...'");
+    system("docker run --rm -it wurstmeister/zookeeper echo 'Pulling zookeeper success...'");
+    system("docker run --rm -it wurstmeister/kafka echo 'Pulling kafka success...'");
+    system("docker run --rm -it redis echo 'Pulling redis success...'");
+    system("docker run --rm -it composer echo 'Pulling composer success...'");
+    system("docker run --rm -it richarvey/nginx-php-fpm echo 'Pulling nginx success...'");
 
     //step2, install composer packages
     $crawler = "$path/src/crawler";
