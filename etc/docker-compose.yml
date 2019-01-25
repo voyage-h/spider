@@ -32,7 +32,6 @@ services:
 
   crawler:
     image: richarvey/nginx-php-fpm
-    env_file: .env
     links:
       - redis
     volumes:
