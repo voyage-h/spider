@@ -72,19 +72,19 @@ $spiderInstall = function($command) use($path) {
     system("docker run --rm -it richarvey/nginx-php-fpm echo 'pull nginx success...'");
 
     //step2, install composer packages
-//    $crawler = "$path/src/crawler";
-//    $kafka = "$path/src/kafka";
-//
-//    system("docker run --rm -v $kafka:/app -it composer $command");
-//    system("docker run --rm -v $crawler:/app -it composer $command");
-//
-//    //step2, check packages
-//    exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
-//    exec("docker run --rm -v $crawler:/app -it composer show -i", $res2);
-//    if (count($res1) < 3 || count($res2) < 7) {
-//        return false;
-//    }
-//    system("docker run --rm -v $crawler:/app -it composer dump-autoload -o");
+    $crawler = "$path/src/crawler";
+    $kafka = "$path/src/kafka";
+
+    system("docker run --rm -v $kafka:/app -it composer $command");
+    system("docker run --rm -v $crawler:/app -it composer $command");
+
+    //step2, check packages
+    exec("docker run --rm -v $kafka:/app -it composer show -i", $res1);
+    exec("docker run --rm -v $crawler:/app -it composer show -i", $res2);
+    if (count($res1) < 3 || count($res2) < 7) {
+        return false;
+    }
+    system("docker run --rm -v $crawler:/app -it composer dump-autoload -o");
     return true;
 };
 /**
