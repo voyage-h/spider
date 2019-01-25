@@ -48,6 +48,7 @@ class CrawlerController extends Controller
         $url = trim($this->request->post['url']);
         $default_url = $url;
         $domain = parse_url($url)['host'];
+
         $left = Rds::get(SPIDER_MAX_COUNT.$domain);
         if (empty($left) || $left < 1) {
             Elog::info('spider', 
@@ -99,13 +100,11 @@ class CrawlerController extends Controller
                     $img['url'] = trim(current(explode('?',trim($img['url']))));
 
                     //download
-                    $download_conf = $this->conf['download'];
-
                     $local_path = '/workspace/images'.
-                        ($download_conf['domainfolder'] ? "/$domain" : '').
-                        ($download_conf['titlefolder'] ? "/$title" : '');
+                        ($this->conf['download']['domainfolder'] ? "/$domain" : '').
+                        ($this->conf['download']['titlefolder'] ? "/$title" : '');
 
-                    $filename = $download_conf['filename'] == 'title' ? $title : null;
+                    $filename = $this->conf['download']['filename'] == 'title' ? $title : null;
 		            $content = Download::local($img['url'], $local_path, $filename);
 
                     if ($content['status'] != 0) {

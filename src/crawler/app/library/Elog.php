@@ -83,7 +83,6 @@ class Elog extends Dispatcher
                 $file = rtrim($this->path,'/').'/'.$filename.'.'.$this->suffix;
                 $res = file_put_contents($file, print_r($data,true), FILE_APPEND);
         }
-        return $res;
     }
     
 }

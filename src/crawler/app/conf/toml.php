@@ -1,5 +1,7 @@
 <?php
 
+return Yosymfony\Toml\Toml::ParseFile('/workspace/etc/image.toml');
+
 return [
     'image'=> [
         /**
@@ -11,7 +13,7 @@ return [
         /**
          * 图片最小size
          */
-        'minsize' => 50000,//100k
+        'minsize' => 100000,//100k
         'maxsize' => 1000000,
         /**
          * 过滤后缀为以下图片

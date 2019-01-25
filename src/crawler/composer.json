@@ -6,9 +6,7 @@
     "predis/predis": "^v1.0",
     "resque/php-resque": "1.2.x",
     "nmred/kafka-php": "0.2.*",
-    "yosymfony/toml": "^1.0",
-    "monolog/monolog": "^1.23",
-    "kmelia/monolog-stdout-handler": "^1.2"
+    "yosymfony/toml": "^1.0"
   },
   "license" : "MIT",
   "autoload" : {

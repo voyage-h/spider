@@ -1,6 +1,6 @@
 [image]
 #图片最小，默认100k
-minsize=10000
+minsize=30000
 
 #图片最大，默认10m
 maxsize=10000000

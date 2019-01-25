@@ -3,8 +3,6 @@
 namespace library;
 
 use system\Dispatcher;
-use Monolog\Logger;
-use Monolog\Handler\StdoutHandler;
 use library\Elog;
 
 class Producer extends Dispatcher
@@ -19,8 +17,8 @@ class Producer extends Dispatcher
      */
     public function __construct()
     {
-        $this->logger = new Logger('my_logger');
-        $this->logger->pushHandler(new StdoutHandler());
+        //$this->logger = new Logger('my_logger');
+        //$this->logger->pushHandler(new StdoutHandler());
         $this->setConfig();
     }
     /**
@@ -63,7 +61,7 @@ class Producer extends Dispatcher
             return $data;
         });
         
-        $producer->setLogger($this->logger);
+        //$producer->setLogger($this->logger);
         
         $d = is_array($data) ? json_encode($data) : $data;
         

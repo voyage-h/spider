@@ -39,4 +39,4 @@ services:
       - ../src/crawler:/workspace/www
       - ../logs:/workspace/logs
       - ../images:/workspace/images
-      - ./default.toml:/workspace/etc/default.toml
+      - ./image.toml:/workspace/etc/image.toml
