@@ -68,7 +68,7 @@ $spiderInstall = function($command) use($path) {
     system("docker run --rm -it wurstmeister/zookeeper echo 'pull zookeeper success...'");
     system("docker run --rm -it wurstmeister/kafka echo 'pull kafka success...'");
     system("docker run --rm -it redis echo 'pull redis success...'");
-    system("docker run --rm -it php echo 'pull php success...'");
+    system("docker run --rm -it composer echo 'pull composer success...'");
     system("docker run --rm -it richarvey/nginx-php-fpm echo 'pull nginx success...'");
 
     //step2, install composer packages
@@ -163,11 +163,11 @@ switch ($command) {
     case 'start':
         $docker('up -d');
         //install procps
-        if (empty($docker("exec consumer which pkill", false))) {
-            $echo('First start spider may take some time to install some tools...');
-            $docker("exec consumer apt-get update");
-            $docker("exec consumer apt-get -y install procps");
-        }
+//        if (empty($docker("exec consumer which pkill", false))) {
+//            $echo('First start spider may take some time to install some tools...');
+//            $docker("exec consumer apt-get update");
+//            $docker("exec consumer apt-get -y install procps");
+//        }
         break;
 
     case 'restart':

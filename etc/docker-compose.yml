@@ -20,8 +20,9 @@ services:
     image: redis
 
   consumer:
-    image: php
-    tty: true #容器启动后不退出
+    image: composer
+    #tty: true #容器启动后不退出
+    command: tail -f /dev/null
     working_dir: /workspace/kafka
     links:
       - kafka
