@@ -6,7 +6,8 @@ defined('BASEPATH') || exit('no access to this file, using index.php instead');
  * @author zhanghang
  *
  */
-class Config extends Dispatcher {
+class Config extends Dispatcher 
+{
     private $conf;
     private $data;
     /**
@@ -14,7 +15,8 @@ class Config extends Dispatcher {
      * 而init方法在每次方法调用前执行全局操作。
      * 
      */
-    public function __construct() {
+    public function __construct() 
+    {
         $this->data = Loader::config();
     }
     /**
@@ -22,7 +24,8 @@ class Config extends Dispatcher {
      * @param string $key
      * @return Ambigous <NULL, unknown>|NULL
      */
-    protected function get($key=null) {
+    protected function get($key=null) 
+    {
         if (!empty($key)) {
             if (strpos($key, '.')) {
                 $conf = $this->data;
@@ -41,7 +44,8 @@ class Config extends Dispatcher {
      * @param string $key
      * @param string $data
      */
-    protected function set($key,$data) {
+    protected function set($key,$data) 
+    {
         if (isset($this->data[$key])) {
             $this->data[$key] = array_merge($this->data[$key],$data);
         } else {

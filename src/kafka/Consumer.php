@@ -8,20 +8,19 @@ use Kafka\Consumer;
 use Kafka\ConsumerConfig;
 date_default_timezone_set('PRC');
 
+$topics = array_slice($argv, 1);
+if (empty($topics)) {
+    exit("Topic cann't be empty");
+}
+
 $config = ConsumerConfig::getInstance();
 $config->setMetadataRefreshIntervalMs(20000);
 $config->setMetadataBrokerList("kafka:9092");
 $config->setGroupId('spider');
 $config->setBrokerVersion('1.0.0');
 
-//
-//$topics = file('.topic');
-//foreach($topics as $key => $topic) {
-//    $topics[$key] = trim($topic);
-//}
-
-$config->setTopics(array_slice($argv, 1));
-$config->setOffsetReset('earliest');
+$config->setTopics($topics);
+$config->setOffsetReset('earliest');//latest|earliest
 
 $consumer = new Consumer();
 

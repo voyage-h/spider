@@ -1,6 +1,6 @@
 [image]
 #图片最小，默认100k
-minsize=30000
+minsize=10000
 
 #图片最大，默认10m
 maxsize=10000000
@@ -18,7 +18,7 @@ type=["jpg","jpeg","png","gif","bmp"]
 ratio=[0.59, 1.8]
 
 #图片下载超时时间，60s
-timeout=60
+timeout=120
 
 [download]
 
@@ -26,7 +26,11 @@ timeout=60
 domainfolder=true
         
 #以title分组，默认true
-titlefolder=false
+titlefolder=true
 
 #文件名称, 随机字符串rand或者title命名
-filename="title"
+filename="rand"
+
+[url]
+#获取url内容超时时间
+timeout=60

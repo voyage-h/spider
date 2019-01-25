@@ -158,7 +158,8 @@ switch ($command) {
         //install procps
         if (empty($docker("exec consumer which pkill", false))) {
             $echo('First start spider may take some time to install some tools...');
-            $docker("exec consumer apt-get update && apt-get -y install procps");
+            $docker("exec consumer apt-get update");
+            $docker("exec consumer apt-get -y install procps");
         }
         break;
 

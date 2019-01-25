@@ -4,6 +4,7 @@ namespace library;
 
 use system\Dispatcher;
 use system\Curl;
+use system\Config;
 
 /**
  * 爬虫
@@ -18,9 +19,11 @@ class Spider extends Dispatcher
      * @param string $this_url
      * @return Ambigous <string, unknown, multitype:Ambigous <unknown, string> >
      */
-    protected function start(string $this_url, $cookie = null) {
+    protected function start(string $this_url, $cookie = null) 
+    {
         $this_url = trim($this_url);
-	    $http = Curl::get($this_url)->setTimeOut(30);
+	    $http = Curl::get($this_url)->setTimeOut(Config::get('toml.url.timeout'));
+
 	    if (!empty($cookie)) {
             $http = $http->withFollowlocation()
                 ->withHeader(false)
