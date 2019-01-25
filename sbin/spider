@@ -236,7 +236,8 @@ EOT;
         if (!empty($topics)) {
             $echo('Spider is running topics: ');
             foreach($topics as $topic) {
-                $topic = end(explode(' ', $topic));
+                $arr = explode(' ', $topic);
+                $topic = end($arr);
                 echo "    - $topic\n";
             }
             echo "\n";
@@ -262,7 +263,8 @@ EOT;
                 $topics = $docker('top consumer | grep consumer.php', false);
                 if (!empty($topics)) {
                     foreach($topics as $topic) {
-                        $topic = end(explode(' ', $topic));
+                        $arr = explode(' ', $topic);
+                        $topic = end($arr);
                         foreach(array_slice($argv, 2) as $t) {
                             if ($t == $topic) {
                                 $docker("exec consumer pkill -f $topic");
