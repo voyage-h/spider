@@ -84,8 +84,8 @@ class Download extends Dispatcher
         return ['status' => 0, 'size' => $size];
     }
     
-    protected function server($url) 
+    protected function server($src) 
     {
-        return Curl::get($url)->setProxy(Config::get('api.image.writer'))->exec();
+        return Curl::get($src)->setProxy(Config::get('api.image.writer'))->exec();
     }
 }

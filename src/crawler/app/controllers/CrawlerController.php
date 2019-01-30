@@ -28,6 +28,10 @@ class CrawlerController extends Controller
     {
         $url = $this->request->post['url'];
 	    $domain  = parse_url($url)['host'];
+        if (empty($domain)) {
+            Elog::info('spider', "Invalid url: $url");
+            return;
+        }
 
     	$timeout = $this->conf['image']['expiretime'];
         $maxcount = $this->conf['image']['maxcount'];

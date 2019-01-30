@@ -26,10 +26,10 @@ timeout=120
 domainfolder=true
         
 #以title分组，默认true
-titlefolder=true
+titlefolder=false
 
 #文件名称, 随机字符串rand或者title命名
-filename="rand"
+filename="title"
 
 [url]
 #获取url内容超时时间
