@@ -10,7 +10,7 @@ services:
     ports: 
       - 9092
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 172.16.36.119
+      KAFKA_ADVERTISED_HOST_NAME: 172.16.36.169
       #KAFKA_HEAP_OPTS: -Xmx256M -Xms128M
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
@@ -29,14 +29,15 @@ services:
       - crawler
     volumes:
       - ../src/kafka:/workspace/kafka
+      - ../logs:/workspace/logs
 
   crawler:
     image: richarvey/nginx-php-fpm
     links:
       - redis
     volumes:
-      - ./nginx:/etc/nginx/sites-enabled
+      - ../src/crawler/conf/nginx:/etc/nginx/sites-enabled  
       - ../src/crawler:/workspace/www
       - ../logs:/workspace/logs
       - ../images:/workspace/images
-      - ./image.toml:/workspace/etc/image.toml
+      - .:/workspace/etc

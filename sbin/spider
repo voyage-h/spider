@@ -285,9 +285,13 @@ EOT;
         $docker('rm -f');
         break;
     case 'remove':
-        fwrite(STDOUT, "确定删除爬虫(y/n): ");
-        if (strtolower(trim(fgets(STDIN))) == 'y')
+        if ($option == '-y') {
             $docker('down');
+        } else {
+            fwrite(STDOUT, "确定删除爬虫(y/n): ");
+            if (strtolower(trim(fgets(STDIN))) == 'y')
+                $docker('down');
+        }
         break;
     case 'status':
         $docker('ps');
