@@ -88,7 +88,7 @@ $spiderInstall = function($command) use($path) {
     return true;
 };
 /**
- * 爬取url，若两次域名不同，这重启
+ * 爬取url
  * consumer容器
  *
  * @param array $urls
@@ -162,12 +162,6 @@ switch ($command) {
     break;
     case 'start':
         $docker('up -d');
-        //install procps
-//        if (empty($docker("exec consumer which pkill", false))) {
-//            $echo('First start spider may take some time to install some tools...');
-//            $docker("exec consumer apt-get update");
-//            $docker("exec consumer apt-get -y install procps");
-//        }
         break;
 
     case 'restart':
